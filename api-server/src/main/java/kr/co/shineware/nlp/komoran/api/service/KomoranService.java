@@ -55,9 +55,10 @@ public class KomoranService {
     private synchronized void loadKomoran() {
         try {
             // KOMORAN 인스턴스 생성
+            // LIGHT → STABLE (models_light), FULL → EXPERIMENT (models_full)
             DEFAULT_MODEL model = "LIGHT".equalsIgnoreCase(modelType)
-                    ? DEFAULT_MODEL.LIGHT
-                    : DEFAULT_MODEL.FULL;
+                    ? DEFAULT_MODEL.STABLE
+                    : DEFAULT_MODEL.EXPERIMENT;
 
             logger.info("Loading KOMORAN with model: {}", model);
             this.komoran = new Komoran(model);
