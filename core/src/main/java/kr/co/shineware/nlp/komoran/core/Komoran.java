@@ -55,7 +55,6 @@ public class Komoran implements Cloneable {
 
     private HashMap<String, List<Pair<String, String>>> fwd;
     private AhoCorasickDictionary<List<Pair<String, String>>> partialFwd;
-    private FindContext partialFwdFindContext;
 
     /**
      * modelPath 디렉토리에 있는 모델 파일들을 로딩하여 객체를 생성합니다. </p>
@@ -254,7 +253,7 @@ public class Komoran implements Cloneable {
             );
         }
 
-        Lattice lattice = new Lattice(this.resources, this.userDic, nbest, combinationRuleChecker);
+        Lattice lattice = new Lattice(this.resources, this.userDic, this.partialFwd, nbest, combinationRuleChecker);
 
         //연속된 숫자, 외래어, 기호 등을 파싱 하기 위한 버퍼
         ContinuousSymbolBuffer continuousSymbolBuffer = new ContinuousSymbolBuffer();
@@ -401,13 +400,8 @@ public class Komoran implements Cloneable {
     }
 
     private void partialFwdParsing(Lattice lattice, char jaso, int curIndex) {
-        if (this.partialFwd == null) {
-            return;
-        }
-
-        // Aho-Corasick으로 부분 문자열 매칭
-        Map<String, List<Pair<String, String>>> matchedMap =
-                this.partialFwd.get(this.partialFwdFindContext, jaso);
+        // Lattice를 통해 Aho-Corasick으로 부분 문자열 매칭
+        Map<String, List<Pair<String, String>>> matchedMap = lattice.retrievalPartialFwd(jaso);
 
         if (matchedMap == null || matchedMap.isEmpty()) {
             return;
@@ -761,7 +755,6 @@ public class Komoran implements Cloneable {
                     new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8));
             String line;
             this.partialFwd = new AhoCorasickDictionary<>();
-            this.partialFwdFindContext = new FindContext<>();
 
             while ((line = br.readLine()) != null) {
                 String[] tmp = line.split("\t");

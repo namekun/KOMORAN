@@ -1,5 +1,6 @@
 package kr.co.shineware.nlp.komoran.core.model;
 
+import kr.co.shineware.ds.aho_corasick.AhoCorasickDictionary;
 import kr.co.shineware.ds.aho_corasick.FindContext;
 import kr.co.shineware.nlp.komoran.constant.SEJONGTAGS;
 import kr.co.shineware.nlp.komoran.constant.SYMBOL;
@@ -26,10 +27,12 @@ public class Lattice {
     private Observation observation;
     private Observation userDicObservation;
     private IrregularTrie irregularTrie;
+    private AhoCorasickDictionary<List<Pair<String, String>>> partialFwd;
 
     private FindContext<List<ScoredTag>> observationFindContext;
     private FindContext<List<IrregularNode>> irregularFindContext;
     private FindContext<List<ScoredTag>> userDicFindContext;
+    private FindContext<List<Pair<String, String>>> partialFwdFindContext;
 
     private final CombinationRuleChecker combinationRuleChecker;
 
@@ -39,15 +42,20 @@ public class Lattice {
     private int nbest;
 
     public Lattice(Resources resource, Observation userDic) {
-        this(resource, userDic, 1, null);
+        this(resource, userDic, null, 1, null);
     }
 
     public Lattice(Resources resource, Observation userDic, int nbest, CombinationRuleChecker combinationRuleChecker) {
+        this(resource, userDic, null, nbest, combinationRuleChecker);
+    }
+
+    public Lattice(Resources resource, Observation userDic, AhoCorasickDictionary<List<Pair<String, String>>> partialFwd, int nbest, CombinationRuleChecker combinationRuleChecker) {
         this.setPosTable(resource.getTable());
         this.setTransition(resource.getTransition());
         this.setObservation(resource.getObservation());
         this.setIrregularTrie(resource.getIrrTrie());
         this.setUserDicObservation(userDic);
+        this.setPartialFwd(partialFwd);
         this.init();
         this.makeNewContexts();
         this.nbest = nbest;
@@ -62,11 +70,18 @@ public class Lattice {
         this.irregularTrie = irrTrie;
     }
 
+    private void setPartialFwd(AhoCorasickDictionary<List<Pair<String, String>>> partialFwd) {
+        this.partialFwd = partialFwd;
+    }
+
     private void makeNewContexts() {
         this.observationFindContext = this.observation.getTrieDictionary().newFindContext();
         this.irregularFindContext = this.irregularTrie.getTrieDictionary().newFindContext();
         if (this.userDicObservation != null) {
             this.userDicFindContext = this.userDicObservation.getTrieDictionary().newFindContext();
+        }
+        if (this.partialFwd != null) {
+            this.partialFwdFindContext = this.partialFwd.newFindContext();
         }
     }
 
@@ -84,6 +99,14 @@ public class Lattice {
         }
 
         return this.userDicObservation.getTrieDictionary().get(this.userDicFindContext, jaso);
+    }
+
+    public Map<String, List<Pair<String, String>>> retrievalPartialFwd(char jaso) {
+        if (this.partialFwd == null) {
+            return null;
+        }
+
+        return this.partialFwd.get(this.partialFwdFindContext, jaso);
     }
 
     private void init() {
