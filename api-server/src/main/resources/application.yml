@@ -10,16 +10,19 @@ spring:
 # KOMORAN 설정
 komoran:
   # 모델 타입: FULL 또는 LIGHT
-  model: FULL
+  model: ${KOMORAN_MODEL:FULL}
 
-  # 사용자 사전 경로 (선택)
-  user-dic-path: ${USER_DIC_PATH:core/user_data/dic.user}
+  # 사용자 사전 경로 (선택, 환경 변수로 지정 권장)
+  # 예: export USER_DIC_PATH=/absolute/path/to/dic.user
+  user-dic-path: ${USER_DIC_PATH:}
 
-  # FWD 사전 경로 (선택)
-  fwd-dic-path: ${FWD_DIC_PATH:core/user_data/fwd.user}
+  # FWD 사전 경로 (선택, 환경 변수로 지정 권장)
+  # 예: export FWD_DIC_PATH=/absolute/path/to/fwd.user
+  fwd-dic-path: ${FWD_DIC_PATH:}
 
-  # Partial FWD 사전 경로 (선택)
-  partial-fwd-dic-path: ${PARTIAL_FWD_DIC_PATH:core/user_data/partial_fwd.user}
+  # Partial FWD 사전 경로 (선택, 환경 변수로 지정 권장)
+  # 예: export PARTIAL_FWD_DIC_PATH=/absolute/path/to/partial_fwd.user
+  partial-fwd-dic-path: ${PARTIAL_FWD_DIC_PATH:}
 
   # 자동 리로드 활성화 (5분마다 파일 변경 체크)
   auto-reload: ${AUTO_RELOAD:true}
