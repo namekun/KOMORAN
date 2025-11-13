@@ -20,4 +20,5 @@ rootProject.name = 'KOMORAN'
 include 'core'
 include 'admin'
 include 'elasticsearch-plugin'
+include 'api-server'
 

@@ -1,0 +1,43 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: komoran-api-server
+
+# KOMORAN 설정
+komoran:
+  # 모델 타입: FULL 또는 LIGHT
+  model: FULL
+
+  # 사용자 사전 경로 (선택)
+  user-dic-path: ${USER_DIC_PATH:core/user_data/dic.user}
+
+  # FWD 사전 경로 (선택)
+  fwd-dic-path: ${FWD_DIC_PATH:core/user_data/fwd.user}
+
+  # Partial FWD 사전 경로 (선택)
+  partial-fwd-dic-path: ${PARTIAL_FWD_DIC_PATH:core/user_data/partial_fwd.user}
+
+  # 자동 리로드 활성화 (5분마다 파일 변경 체크)
+  auto-reload: ${AUTO_RELOAD:true}
+
+# 로깅 설정
+logging:
+  level:
+    root: INFO
+    kr.co.shineware.nlp.komoran: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Actuator 설정 (헬스체크 등)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
