@@ -17,6 +17,7 @@
  *******************************************************************************/
 package kr.co.shineware.nlp.komoran.core;
 
+import kr.co.shineware.ds.aho_corasick.AhoCorasickDictionary;
 import kr.co.shineware.ds.aho_corasick.FindContext;
 import kr.co.shineware.nlp.komoran.constant.*;
 import kr.co.shineware.nlp.komoran.core.model.*;
@@ -53,6 +54,8 @@ public class Komoran implements Cloneable {
     private KoreanUnitParser unitParser;
 
     private HashMap<String, List<Pair<String, String>>> fwd;
+    private AhoCorasickDictionary<List<Pair<String, String>>> partialFwd;
+    private FindContext partialFwdFindContext;
 
     /**
      * modelPath 디렉토리에 있는 모델 파일들을 로딩하여 객체를 생성합니다. </p>
@@ -288,6 +291,7 @@ public class Komoran implements Cloneable {
             //기타 기호인 경우
             this.symbolParsing(lattice, jasoUnits.charAt(curJasoIndex), curJasoIndex); // 기타 심볼 파싱
             this.userDicParsing(lattice, jasoUnits.charAt(curJasoIndex), curJasoIndex); //사용자 사전 적용
+            this.partialFwdParsing(lattice, jasoUnits.charAt(curJasoIndex), curJasoIndex); //부분 기분석 사전 적용
 
             this.regularParsing(lattice, jasoUnits.charAt(curJasoIndex), curJasoIndex); //일반규칙 파싱
             this.irregularParsing(lattice, jasoUnits.charAt(curJasoIndex), curJasoIndex); //불규칙 파싱
@@ -392,6 +396,56 @@ public class Komoran implements Cloneable {
             List<ScoredTag> scoredTags = morphScoredTagsMap.get(morph);
             for (ScoredTag scoredTag : scoredTags) {
                 lattice.put(beginIdx, endIdx, morph, scoredTag.getTag(), scoredTag.getTagId(), scoredTag.getScore());
+            }
+        }
+    }
+
+    private void partialFwdParsing(Lattice lattice, char jaso, int curIndex) {
+        if (this.partialFwd == null) {
+            return;
+        }
+
+        // Aho-Corasick으로 부분 문자열 매칭
+        Map<String, List<Pair<String, String>>> matchedMap =
+                this.partialFwd.get(this.partialFwdFindContext, jaso);
+
+        if (matchedMap == null || matchedMap.isEmpty()) {
+            return;
+        }
+
+        // 매칭된 각 패턴에 대해 처리
+        for (String matchedJasoString : matchedMap.keySet()) {
+            List<Pair<String, String>> morphPosList = matchedMap.get(matchedJasoString);
+
+            if (morphPosList == null || morphPosList.isEmpty()) {
+                continue;
+            }
+
+            // 매칭된 패턴의 시작 인덱스 계산
+            int matchedLength = matchedJasoString.length();
+            int beginIdx = curIndex - matchedLength + 1;
+            int endIdx = curIndex + 1;
+
+            // 여러 형태소를 순차적으로 lattice에 삽입
+            int currentIdx = beginIdx;
+            for (Pair<String, String> morphPos : morphPosList) {
+                String morph = morphPos.getFirst();
+                String pos = morphPos.getSecond();
+
+                // 형태소를 자소 단위로 변환
+                String morphJaso = this.unitParser.parse(morph);
+                int morphLength = morphJaso.length();
+                int morphEndIdx = currentIdx + morphLength;
+
+                // 품사 태그 ID 가져오기
+                Integer tagId = this.resources.getTable().getId(pos);
+                if (tagId != null) {
+                    // lattice에 삽입 (score는 0.0으로 설정하여 높은 우선순위 부여)
+                    lattice.put(currentIdx, morphEndIdx, morph, pos, tagId, 0.0);
+                }
+
+                // 다음 형태소의 시작 인덱스로 이동
+                currentIdx = morphEndIdx;
             }
         }
     }
@@ -681,6 +735,56 @@ public class Komoran implements Cloneable {
                         convertAnswerList);
             }
             br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 형태소 분석 시 사용될 부분 기분석 사전을 로드합니다. </p>
+     * 기분석 사전(FWD)과 달리, 어절이 완전 일치하지 않아도 부분 문자열 매칭이 가능합니다. </p>
+     * 형태소 분석 진행 전에 로드되어야 합니다.
+     * <pre>
+     *     Komoran komoran = new Komoran(DEFAULT_MODEL.STABLE);
+     *     komoran.setPartialFWDic("user_data/partial_fwd.user");
+     *     KomoranResult komoranResult = komoran.analyze("나이키 운동화를 샀어");
+     *     // "나이키 운동화"가 부분 매칭되어 기분석 결과 적용
+     * </pre>
+     *
+     * @param filename 부분 기분석 사전 파일 경로
+     */
+    public void setPartialFWDic(String filename) {
+        try {
+            CorpusParser corpusParser = new CorpusParser();
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8));
+            String line;
+            this.partialFwd = new AhoCorasickDictionary<>();
+            this.partialFwdFindContext = new FindContext<>();
+
+            while ((line = br.readLine()) != null) {
+                String[] tmp = line.split("\t");
+                // 주석이거나 format에 안 맞는 경우는 skip
+                if (tmp.length != 2 || tmp[0].charAt(0) == '#') {
+                    continue;
+                }
+
+                ProblemAnswerPair problemAnswerPair = corpusParser.parse(line);
+                List<Pair<String, String>> convertAnswerList = new ArrayList<>();
+                for (Pair<String, String> pair : problemAnswerPair.getAnswerList()) {
+                    convertAnswerList.add(
+                            new Pair<>(pair.getFirst(), pair.getSecond()));
+                }
+
+                // 자소 단위로 변환하여 Aho-Corasick 트라이에 저장
+                String jasoString = this.unitParser.parse(problemAnswerPair.getProblem());
+                this.partialFwd.put(jasoString, convertAnswerList);
+            }
+            br.close();
+
+            // Aho-Corasick 트라이 빌드
+            this.partialFwd.buildFailureLink();
 
         } catch (Exception e) {
             e.printStackTrace();
