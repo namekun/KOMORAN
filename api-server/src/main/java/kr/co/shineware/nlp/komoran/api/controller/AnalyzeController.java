@@ -2,8 +2,6 @@ package kr.co.shineware.nlp.komoran.api.controller;
 
 import kr.co.shineware.nlp.komoran.api.service.KomoranService;
 import kr.co.shineware.nlp.komoran.model.KomoranResult;
-import kr.co.shineware.nlp.komoran.model.Token;
-import kr.co.shineware.util.common.model.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
