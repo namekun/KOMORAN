@@ -7,7 +7,7 @@ group = 'com.github.shineware'
 
 
 apply plugin: 'maven-publish'
-apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'eclipse'
 
 java {
@@ -44,8 +44,10 @@ repositories {
 //}
 
 dependencies {
-    implementation 'com.github.shineware:commons:1.0.1'
-    implementation 'com.github.shineware:aho-corasick:1.1.0'
+    // Use 'api' instead of 'implementation' because these types are exposed in public API
+    // (e.g., KomoranResult.getList() returns List<Pair<String, String>>)
+    api 'com.github.shineware:commons:1.0.1'
+    api 'com.github.shineware:aho-corasick:1.1.0'
     testImplementation 'junit:junit:4.12'
 }
 
