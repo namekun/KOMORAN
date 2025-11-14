@@ -5,6 +5,7 @@ import kr.co.shineware.nlp.komoran.model.KomoranResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +26,13 @@ public class AnalyzeController {
     private KomoranService komoranService;
 
     /**
-     * 형태소 분석 API
+     * 형태소 분석 API (JSON)
      *
      * POST /api/analyze
+     * Content-Type: application/json
      * Body: { "text": "분석할 문장" }
      */
-    @PostMapping("/analyze")
+    @PostMapping(value = "/analyze", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> analyze(@RequestBody Map<String, String> request) {
         try {
             String text = request.get("text");
@@ -61,16 +63,83 @@ public class AnalyzeController {
     }
 
     /**
-     * 명사만 추출하는 API
+     * 형태소 분석 API (Plain Text)
+     *
+     * POST /api/analyze
+     * Content-Type: text/plain
+     * Body: 분석할 문장
+     */
+    @PostMapping(value = "/analyze", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<Map<String, Object>> analyzeText(@RequestBody String text) {
+        try {
+            if (text == null || text.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Text is required"));
+            }
+
+            logger.debug("Analyzing text: {}", text);
+
+            KomoranResult result = komoranService.analyze(text);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("text", text);
+            response.put("plainText", result.getPlainText());
+            response.put("list", result.getList());
+            response.put("tokens", result.getTokenList());
+            response.put("nouns", result.getNouns());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error analyzing text", e);
+            return ResponseEntity.internalServerError()
+                    .body(createErrorResponse("Analysis failed: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 명사만 추출하는 API (JSON)
      *
      * POST /api/nouns
+     * Content-Type: application/json
      * Body: { "text": "분석할 문장" }
      */
-    @PostMapping("/nouns")
+    @PostMapping(value = "/nouns", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> extractNouns(@RequestBody Map<String, String> request) {
         try {
             String text = request.get("text");
 
+            if (text == null || text.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Text is required"));
+            }
+
+            KomoranResult result = komoranService.analyze(text);
+            List<String> nouns = result.getNouns();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("text", text);
+            response.put("nouns", nouns);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error extracting nouns", e);
+            return ResponseEntity.internalServerError()
+                    .body(createErrorResponse("Noun extraction failed: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 명사만 추출하는 API (Plain Text)
+     *
+     * POST /api/nouns
+     * Content-Type: text/plain
+     * Body: 분석할 문장
+     */
+    @PostMapping(value = "/nouns", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<Map<String, Object>> extractNounsText(@RequestBody String text) {
+        try {
             if (text == null || text.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(createErrorResponse("Text is required"));
             }
