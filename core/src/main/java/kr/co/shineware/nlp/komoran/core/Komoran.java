@@ -777,7 +777,7 @@ public class Komoran implements Cloneable {
             br.close();
 
             // Aho-Corasick 트라이 빌드
-            this.partialFwd.buildFailureLink();
+            this.partialFwd.buildFailLink();
 
         } catch (Exception e) {
             e.printStackTrace();
