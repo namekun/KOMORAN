@@ -38,6 +38,21 @@
 
 '[3분 만에 형태소 분석 따라하기](https://docs.komoran.kr/firststep/tutorial.html?utm_source=komoran-repo&utm_medium=Referral&utm_campaign=github-demo)' 문서를 참고해주세요.
 
+### 새로운 기능
+
+#### REST API 서버
+Spring Boot 기반 형태소 분석 REST API 서버를 제공합니다.
+* [API Server Quick Start](api-server/README.md) - 빠른 시작 가이드
+* [API Server 상세 가이드](docs/API_SERVER_GUIDE.md) - 전체 문서
+
+#### Partial FWD (부분 기분석)
+부분 일치를 지원하는 기분석 사전 기능입니다.
+* [Partial FWD 기능 문서](docs/PARTIAL_FWD_FEATURE.md)
+
+#### 프로젝트 분석 문서
+KOMORAN 프로젝트의 상세한 기술 분석 문서입니다.
+* [프로젝트 구조 분석](docs/KOMORAN_PROJECT_ANALYSIS.md)
+
 ### 사용 예시
 
 * [분석 예시](https://docs.komoran.kr/examples/analyze.html?utm_source=komoran-repo&utm_medium=Referral&utm_campaign=github-demo)
